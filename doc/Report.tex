@@ -1,0 +1,162 @@
+\documentclass[10pt]{article}
+
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[margin=1in, top=0.5in]{geometry}
+
+\begin{document}
+
+\title{C Project Final Report, Group 36}
+\author{Caleb Kan, Jeffrey Cheung, Hyunbin Jang, Ryan Fok}
+
+\maketitle
+
+\section{The ARM Assembler}
+\subsection{Implementation Strategies}
+We decided to implement the \textbf{two pass} assembler. The assembler's entry point is assemble.c, containing the main function that starts the two-pass assembly process. The file assembler\_two\_pass.c outlines the logic for the first pass, building the symbol table, and the second pass, generating the binary encoding. \\
+\\
+Instruction handling is split across 3 files:
+\begin{enumerate}
+    \item \textbf{Branching}: Handles branch instructions by calculating the relative addresses and encoding them.
+    \item \textbf{Data Processing}: Manages data processing instructions including arithmetic and logical operations. 
+    \item \textbf{Loads and Stores}: Encodes instructions for loading from and storing to memory. 
+\end{enumerate}
+For the symbol table, we have implemented using a dynamic array. In assembler\_symbol\_table.c, it shows the key functions for the symbol table. When there is a new symbol, we add the label and address to the array, and the add\_item function checks if the symbol table is full, if so, it uses the realloc to increase the memory allocation which increases the size of the array. \\
+\\
+The second pass of our assembler is designed to process each instruction in the assembly file, converting them into their binary representations. During this phase, we iterate through the instructions, skipping over labels as they have already been handled in the first pass and stored in the symbol table. Our processing strategy diverges based on the nature of the instruction encountered. \\ 
+\\
+For .int directives, we employ a specialised approach. The handle\_directive function in assembler\_two\_pass.c is responsible for processing the value following the .int directive and writing its binary encoding directly to the output file. This specialised handling ensures that data declarations are correctly interpreted and encoded in the final output. \\
+\\
+For generic instructions, we first classify the opcode to determine whether it is a branch, data processing, or load/store instruction. Based on this classification, the instruction is then passed to the appropriate module (assembler\_branching.c, assembler\_data\_processing.c, or assembler\_loads\_and\_stores.c) for further processing. Within these specialised modules, key information is extracted from the instruction, and the binary encoding is constructed using the write\_bits function from assembler\_write.c. Finally, the resulting binary code is written to the output file, completing the processing of each instruction. This modular approach allows for efficient and specialised handling of different instruction types, enhancing the maintainability and extensibility of our assembler.
+
+\subsection{Challenges}
+
+\subsubsection{Code Duplication}
+One of the primary issues we faced was the presence of numerous instances of duplicated code, particularly in sections dealing with branching, data processing, and load/store instructions. This redundancy not only increased the code-base size but also posed potential maintenance difficulties. To mitigate this issue, we undertook a comprehensive code refactoring process. We standardised our code-base by defining reusable functions to handle shared logic across different instruction types. This approach allowed us to significantly reduce code duplication, resulting in a more maintainable and coherent implementation.
+
+\subsubsection{Magic Numbers}
+Another challenge we encountered was the frequent occurrence of magic numbers throughout our code-base. These arbitrary numerical values, lacking context and clarity, made the code difficult to understand and maintain, especially for those unfamiliar with the project. To address this issue, we implemented a systematic approach to eliminate magic numbers entirely. We leveraged the \#define macro in our header files to properly define these constants, assigning them descriptive and meaningful names. This enhancement significantly improved the overall readability and comprehensibility of our implementation.
+
+\subsubsection{Inconsistent Formatting of Assembly Code in Test Suite}
+The final major challenge we faced was related to inconsistent formatting in the assembly files provided in the test suite. These files exhibited varying spacing and indentation, with some lines having leading or trailing spaces. This inconsistency led to errors during testing, which initially went unnoticed and took considerable time to identify. To overcome this challenge, we developed a robust parsing mechanism that could handle these formatting inconsistencies. Our implementation was modified to account for varying spaces and indentations, ensuring that it could correctly interpret and process the test cases regardless of their formatting. This adaptation allowed our assembler to adhere to the test case requirements consistently.
+
+\subsection{Reflections on Assembler}
+Clearer communications were made when we were implementing the assembler compare to the emulator. We have also utilised the Live Share extension in VS code, avoiding possible conflicts in git when 2 or more members are working on the same part. We also had a better division of workload while working on the assembler.
+
+\section{Part III LED Blinking}
+We successfully developed and implemented assembly code for LED blinking on the Raspberry Pi. Using our custom-built assembler, we generated a kernel8.img file from this assembly code. Upon loading this kernel image onto the Raspberry Pi, we observed the LED blinking as intended, confirming the successful execution of our program and the effectiveness of our assembler.
+
+\section{Traffic Lights on Raspberry Pi}
+
+Expanding on Part III, we utilised the additional LEDs at our disposal to create a traffic light simulation as part of our extension. This simulation incorporated red, yellow, and green LEDs to replicate the familiar traffic signal pattern. For both the simple LED blink and the more complex traffic light simulation, we employed our custom-built assembler to generate the respective kernel8.img files. These files were then stored on the SD card, allowing for seamless execution on the Raspberry Pi hardware.
+
+\section{The Emulator Visualiser}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1.0\textwidth]{emulator.png}
+    \caption{The GUI Interface}
+    \label{emulator}
+\end{figure}
+
+%\includegraphics[width=1.0\textwidth]{emulator.png}
+
+\subsection{Background}
+When we were programming the emulator, we found it difficult to understand and debug what exactly is happening at the lower level architecture. We were confused with how the instructions and data were handled and executed by the processor. Therefore, we decided for our extension, we would be working on a project that can visualise how the data and instructions are being passed through in the ARM processor by highlighting the data path accordingly. In other words, we attempted to visualise the emulator we have done in part 1. \\
+\\
+While we are unsure about the actual ARM architecture in this project, we have chosen the layout that is used in Part 1 of COMP40005 Introduction to Computer Architecture to visualise the emulator process.
+
+\subsection{Features}
+In the GUI, a user can drag the ARMv8 assembly file into the application, and when the halt instruction is reached, instead of re-running the program, a user can drag another file to run. Key features include:
+\begin{enumerate}
+\item \textbf{Interactive Visualisation}: The visualiser provides a detailed and interactive representation of the processor's internal state. Users can see the current values in registers, the state of the program counter (PC), and the contents of memory.
+\item \textbf{Step-by-Step Execution}: Users can step through the execution of instructions, observing how each instruction is fetched, decoded, and executed.
+\item \textbf{Instruction Breakdown}: The visualiser breaks down each instruction into its constituent parts, showing how operands are fetched, how the ALU processes data, and how results are stored back into registers or memory.
+\end{enumerate}
+
+\subsection{The Codebase}
+We are using the \href{https://www.libsdl.org/}{SDL Library} to achieve the interface for the GUI. As usual, we have main.c as the entry point of the program, where it handles the window event. Here are the interactions between the files:
+
+\begin{itemize}
+    \item The visual\_emulator.c file is the core of the system, using functions from process\_instructions.c, draw.c, and memory\_window.c to emulate the system.
+    \item process\_instructions.c contains the specific definitions of the lines and arrows states for each type of instruction which will then be passed into draw.c for drawing.
+    \item draw.c contains functions to draw the interactive GUI.
+    \item memory\_window.c provide tools to view the current state of the emulator memory.
+    \item button.c contains functions to produce the interactive buttons, allowing users to influence the emulation process.
+    \item disassembler.c provide tools for parsing the assembly file and show the current assembly instruction being executed.
+    \item There are also emulator files written in Part I used to emulate the execution.
+\end{itemize}
+
+\subsection{Testing}
+As our project involves a visualisation application, traditional automated test cases are not applicable for verifying correctness. Instead, we rely heavily on human feedback and manual testing to ensure the application's functionality and accuracy.
+Our testing methodology involves the following steps:
+\begin{enumerate}
+\item We manually import assembly files from the provided test suite into our application.
+\item Assuming the assembly code is valid, we meticulously examine each instruction to verify if the corresponding data path is correctly highlighted.
+\item We pay particular attention to different instruction types, such as branch instructions and Load/Store operations, to ensure their unique data paths are accurately represented.
+\end{enumerate}
+While this approach allows for a detailed inspection of the application's behavior, it does present certain limitations:
+\begin{enumerate}
+\item \textbf{Time-intensive process}: The manual analysis of each assembly instruction is considerably time-consuming.
+\item \textbf{Limited coverage}: Due to the vast number of possible assembly code combinations and user interactions, we cannot feasibly test every scenario.
+\item \textbf{Potential for oversight}: The manual nature of the testing increases the risk of human error or oversight.
+\item \textbf{Undefined behaviors}: Given the inability to test all possible cases, there remains a possibility of unexpected or undefined behaviors occurring during use.
+\end{enumerate}
+To mitigate these limitations, we have implemented a structured testing protocol and maintain detailed documentation of our findings. However, we acknowledge that some edge cases or unusual user interactions may still lead to unforeseen behaviors in the application. \\
+\\
+Another challenge we faced was related to memory management, particularly concerning the use of pointer variables. To address this issue, we implemented a strategy to reduce the use of pointers throughout our code-base. Instead of relying on pointer variables, we opted for direct value declarations wherever possible. This approach offered several advantages. Primarily, it eliminated the need to consistently remember to free pointer memory after use, significantly reducing the risk of memory leaks. By minimising pointer usage, we simplified our memory management processes and enhanced the overall robustness of our code. This strategy not only improved the efficiency of our development process but also contributed to increased code readability and maintainability. The shift away from extensive pointer use allowed developers to focus more on core functionality rather than complex memory management tasks, ultimately leading to a more streamlined and reliable extension implementation.
+
+\subsection{Reflections on Visual Emulator}
+In our project, we prioritised code efficiency and reusability across different components. We successfully repurposed significant portions of our emulator code from Part 1 and integrated our assembler executable from Part 2 into subsequent phases of the project. This approach not only streamlined our development process but also ensured consistency and reliability across different project components.\\
+\\
+However, we encountered challenges in cross-platform development and testing. Due to restrictions on installing required libraries (SDL2 and SDL2\_ttf) on the lab machines, our visualiser component was primarily developed and tested on Windows and macOS operating systems. This limitation in our testing environment meant we could not conduct comprehensive testing on Linux systems. \\
+\\
+As a result of these constraints, we were only able to provide executable files for Windows and macOS platforms. While this approach allowed us to deliver functional software for these systems, it potentially limits accessibility for users on other operating systems.
+
+\section{Group Reflections}
+
+Our team's experience through this C project has been a valuable learning experience, allowing us to try different collaboration approaches and adapting effective work strategies. We experimented with various approaches to group programming, realising the ups and downsides for each.\\
+\\
+We tried stand-up meetings once per 1-2 days, which proved to be an effective method for keeping everyone updated on progress and challenges. These short, focused sessions helped maintain alignment within the team. Our primary communication channel was Discord for remote discussions and in-person meetings for further discussions for in depth ideas. This combination worked well, providing flexibility and the ability to have both quick check-ins and more substantial discussions when needed.\\
+\\
+We also explored different collaborative coding methods, including pair programming and utilising VS Code's Live Share extension. Live Share was particularly useful for real-time collaboration, allowing us to work together on the same codebase simultaneously and avoid git conflict.\\
+\\
+Our communication improved as we progressed through different phases of the project. During the emulator development, we faced some challenges in finding an efficient workflow. Different people has different ideas and it is hard to convey your own idea to let other teammates to understand. However, we saw improvement when implementing the assembler. By the time we reached the extension phase, we had refined our approach to a more effective method. \\
+\\
+One of our key learnings was the importance of establishing a solid foundation before diving into individual tasks. For future projects, we've identified what we believe to be the best approach: First, discuss the overall implementation logic as a group. Then, have one or two team members create a skeleton code that outlines the general structure. Finally, distribute specific functions among team members to complete. This method combines the benefits of collaborative planning with the efficiency of parallel work. It ensures everyone understands the overall logic while allowing for individual focus on specific components. \\
+\\
+In conclusion, this project has highlighted the importance of clear communication, and adaptive work strategies in group programming. We hope to adapt similar strategies in future projects such as Pintos and the WACC compiler. 
+
+
+\section{Individual Reflections}
+
+\subsection{Caleb Kan}
+Throughout this group project, which included developing an emulator, assembler, LED implementations, and a visual emulator GUI, I discovered several strengths that positively impacted our team's progress. \\
+\\
+My ability to effectively coordinate tasks and provide clear roadmaps helped maintain focus and momentum. My prompt responsiveness to queries facilitated rapid progress and open communication. I also demonstrated a strong commitment to standard coding practices, contributing to our codebase's quality and maintainability.
+I approached the project with urgency, enabling significant progress in a short time-frame, as evidenced by completing Parts 1, 2, and 3 in under two weeks. \\
+\\
+However, I identified an area for improvement: at the project's start, there was an uneven workload distribution, with Jeffrey and I taking on a larger share. This made it challenging for Hyunbin and Ryan to catch up. In future projects, I would aim for more equitable task delegation from the outset. \\
+\\
+This experience highlighted the importance of balancing efficiency with inclusivity. Moving forward, I'll maintain my strengths in coordination, communication, and best practices, while improving task delegation to foster a more balanced and collaborative team environment.
+
+\subsection{Jeffrey Cheung}
+In the initial stages of the project, everything progressed smoothly. However, as we delved deeper into the project, the complexity increased. My role within the group evolved from just writing code to designing the entire program structure and determining our strategic direction. I derived immense satisfaction from problem-solving during coding. However, this experience has revealed that I also enjoy planning the structure, anticipating potential issues with certain implementations, and strategising accordingly beforehand. I have learnt the importance of maintaining a clear vision of our objectives, so that when the team is unsure of the next steps, I can provide a definitive direction to follow.\\
+\\
+While I found myself engrossed in the coding aspect of our project and managed to complete a significant portion of it during a productive overnight session, I realise this might have left less work for the rest of the team. I will work on collaborating more closely on future tasks to ensure everyone has an opportunity to contribute. \\
+\\
+Nevertheless, the method we used during the extension phase was not possible without the help of my teammates producing high-quality code. I believe that this strategy may not be as effective when working with different individuals. Therefore the working strategy have to be adjusted accordingly to the strengths of the team, and I appreciate my teammates for being patient and supportive throughout the coding process.
+
+
+\subsection{Hyunbin Jang}
+During the project, I discovered strengths in code review and debugging, where I efficiently identified and fixed weak spots in the team's code. Additionally, I effectively coordinated and organised the presentation, ensuring it was well-structured and comprehensive.\\
+\\However, I realised the need to improve my proactive coordination. Starting my tasks earlier would prevent the need to catch up with others' progress, since during this project I spent too much time on just catching up the progress. I also found that more frequent group discussions before starting tasks would ensure everyone knows exactly what to do, improving overall efficiency and allowing more even distributions of workload.\\
+\\This project highlighted the importance of clear and even workload distribution. Ensuring everyone contributes equally will help manage tasks more efficiently and effectively. Early discussions after building the program's skeleton are crucial, as they help everyone understand the overall structure before coding the details. These insights will guide me in future projects, leading to improved collaboration and efficiency.
+
+\subsection{Ryan Fok}
+Having to complete a project right after 9 exams is not the best idea. Initially, I found myself reluctant to dive into coding, and the extensive project specifications seemed daunting. Fortunately, my supportive teammates guided me through the requirements, helping me gradually engage with the work. During the emulator task, I struggled to fully grasp the concepts, primarily assisting with debugging and code refinement. As the project progressed, I began to catch up and discover the satisfaction of creating something meaningful. This increased involvement is reflected positively in my Peer Assessment feedback. A highlight for our group was witnessing the LED blinking for the first time. \\
+\\
+For future collaborations, particularly with new team members, I plan to advocate for the Scrum methodology. It seems most effective in keeping all team members aligned and informed. This project marked my first experience coding in a group setting, providing valuable lessons in collaboration with peers especially at a technical setting.
+
+\end{document}

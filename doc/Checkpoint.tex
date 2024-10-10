@@ -1,0 +1,61 @@
+\documentclass[10pt]{article}
+
+\usepackage{fullpage}
+\usepackage{graphicx}
+\usepackage[margin=1in, top=0.5in]{geometry}
+
+\begin{document}
+
+\title{ARM Checkpoint on Emulator, Group 36}
+\author{Caleb Kan, Jeffrey Cheung, Hyunbin Jang, Ryan Fok}
+
+\maketitle
+
+\section{Group Organisation}
+
+Our group consists of Caleb, Jeffrey, Hyunbin, and Ryan. We collaboratively outlined the emulator's architecture.
+We are working using the pair programming method with rotating pairs like Caleb/Jeffrey and Ryan/Hyunbin. Caleb and Jeffrey lead the core implementation, while Ryan and Hyunbin do the code review and debugging.
+
+\section{Implementation Strategies}
+The emulator's entry point is emulate.c, containing the main function that initialises the emulator and the execution loop. Key functionalities:
+\begin{enumerate}
+\item \textbf{Initialisation}: Setting up emulator state (memory, registers, program counter, flags).
+\item \textbf{Loading Program}: Reading binary code into emulator memory.
+\item \textbf{Execution Loop}: Fetching, decoding, and executing instructions until program termination, printing final register and memory state based on arguments.
+\end{enumerate}
+Our implementation of the emulator is divided across multiple files/sections: \textbf{Decode}, \textbf{Execute}, \textbf{Memory}, \textbf{Instructions}, \textbf{Process Instruction}, and \textbf{Registers}.
+\subsection{Memory and Registers}
+These files handle memory and register operations (e.g. read, write) both in 32 and 64 bits. Initialisation of memory, registers, program counter, and flags. Finally, outputting the registers, program counter, flags, and the final non-zero state of the memory.
+
+\subsection{Decode}
+Contains functions to decode various instruction types by extracting relevant bit positions. To achieve this, we employed pointers with dynamic memory allocation, facilitating the extraction and storage of relevant information from instructions. Specifically, in Process Instruction, we defined the pertinent data we needed to extract, allocating memory for pointers to hold these values. Subsequently, these pointers were passed into the Decode functions, enabling them to update the pointers with the corresponding bit positions from the instruction, thereby populating the relevant information required for further processing.
+
+\subsection{Process and Execute Instructions}
+The process\_instruction function, aided by a memory management helper, extracts instruction bits to identify the type (immediate/register/load-store/branch) as per the project specification, invoking appropriate execution functions. Dynamic memory allocation accommodates varying instruction sizes and operand types. The execution files implement ARMv8 execution functions for 32/64-bit mentioned in the project specification.
+
+
+\section{Challenges}
+\subsection{Types}
+Selecting the appropriate data types to represent data in the program was a challenge. There are various integer types available (e.g., int64, int32, int16) with different sizes and signedness. Using the wrong type could lead to incomplete data representation, returning false result. \newline
+\\
+Sometimes it is necessary to specify the size of the int, however in other cases integer size is not important, considering different processors have different alignments and word sizes where nowadays are at least 16 bits, we should use int instead of specifying to achieve better performance.
+
+
+\subsection{Header File Inclusion}
+During the initial implementation of the emulator, we employed macros in our header files to ensure that each header was included only once during compilation. This approach aimed to prevent redefinition errors and unnecessary processing that could arise from multiple inclusions of the same header file by other header files that included it. However, we recognised the potential for a more efficient solution and decided to address the root cause of this issue. In our final implementation of the emulator, we eliminated the need for macros by removing all transitive closures of header files. This approach streamlined the inclusion process, mitigating the risk of redefinition errors and redundant processing, without relying on macros to guard against multiple inclusions.
+
+\subsection{Duplicated Code}
+During the implementation of Decode, Process Instruction, and Execute, we identified numerous instances of duplicated code in our initial implementation. This duplication resulted in multiple code segments performing identical tasks or operations. As part of the refinement process, where we standardised our codebase, we eliminated the redundant code by defining reusable functions to handle the shared logic. Consequently, we were able to remove substantial portions of duplicated code, thereby enhancing the maintainability and coherence of our implementation.
+
+\subsection{Magic Numbers}
+When coding the emulator, we encountered the frequent occurrence of magic numbers throughout our codebase. These arbitrary numerical values were scattered across various parts of the code, making it challenging for anyone unfamiliar with the project to comprehend their significance or purpose. This lack of context and clarity posed a potential obstacle for code maintainability and understanding, especially from an outsider's perspective. To address this issue, we took proactive measures by eliminating the use of magic numbers entirely. Instead, we leveraged the \#define macro in our header files to properly define these constants and assign them descriptive and meaningful names. By doing so, anyone reviewing our code would gain a better understanding of the context and meaning behind these numerical values, enhancing the overall readability and comprehensibility of our implementation.
+
+\section{Reflection on groups}
+\subsection{Possible Reuse}
+In C, a function cannot directly return multiple values, so instead we chose to use pointers with memory allocations to achieve the same desired result. This approach should be useful when we implement similar functionalities in assembler.
+
+\subsection{Future plans}
+
+The pair programming approach has proven an efficient approach for completing the emulator task. Going forward, we will incorporate Scrum methodologies to improve coordination and keep all team members informed about the code changes. Additionally, we aim to experiment with different pair assignments for the later tasks, finding out what combinations will work best for our group.
+
+\end{document}
